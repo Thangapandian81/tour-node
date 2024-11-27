@@ -171,6 +171,20 @@ router.post('/send-otp', async (req, res) => {
     const { phoneNumber } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000); // Generates a 6-digit OTP
 
+       // Query the visitors collection for the matching phone number
+       const visitorQuery = await db.collection("visitors").where("phone", "==", phoneNumber).get();
+
+       if (visitorQuery.empty) {
+           return res.status(404).json({ error: "Visitor with this phone number not found" });
+       }
+   
+       // Assuming phone numbers are unique, fetch the first matching document
+       const visitorDoc = visitorQuery.docs[0];
+       const visitorId = visitorDoc.id;
+   
+       // Update the OTP in the matching visitor document
+       await db.collection("visitors").doc(visitorId).update({ otp });
+
     try {
         const response = await sendOtpSms(phoneNumber, otp);
         res.status(200).json({ status:"200", message: 'OTP sent successfully', otp });
