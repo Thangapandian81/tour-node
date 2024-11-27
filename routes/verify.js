@@ -236,7 +236,7 @@ router.post('/verify-otp', async (req, res) => {
         // const visitorData = visitorDoc.data();
 
         // Step 2: Verify the OTP
-        if (visitorData.otp !== otp) {
+        if (visitorDoc.otp !== otp) {
             return res.status(400).json({ error: "Invalid OTP" });
         }
 
