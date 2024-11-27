@@ -31,7 +31,7 @@ app.use('/auth',authRoutes)
 app.use('/stripe',striptRoutes)
 app.use('/mail',mailRoutes)
 app.use('/find',findRoutes)
-app.use('/razor'razorRoutes)
+app.use('/razor',razorRoutes)
 
 
 // app.post("/sample",async (req,res)=>{
