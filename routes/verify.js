@@ -323,9 +323,9 @@ router.post('/verify-amount', async (req, res) => {
             return res.status(404).json({ error: "Visitor with this email not found" });
         }
 
-        // Assuming email is unique, fetch the first matching document
-        const visitorDoc = visitorQuery.docs[0];
-        const visitorId = visitorDoc.id; // Get the visitor ID from the document
+       // Assuming email is unique, fetch the first matching document
+       const visitorDoc = visitorQuery.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+       const visitorId = visitorDoc[0].visitor_id; // Get the visitor ID from the document
 
         // Step 2: Fetch the booking document using the visitor_id and booking_id
         const bookingQuery = await db.collection("booking")
