@@ -17,134 +17,80 @@ const app = express();
 app.use(bodyParser.json());
 
 router.post('/create-booking', async (req, res) => {
-    const { visitor_id, visitor_email, package_id, booking_date, amount_status } = req.body;
-    const currentTimestamp = new Date().toISOString();
-  
-    // Ensure booking_date is valid
-    if (!booking_date) {
-      return res.status(400).send({ error: 'Booking date is required.' });
+  try {
+    // Extract data from the request
+    const { date_time, time_zone_id } = req.body.booking_date; // Get booking_date object
+    const { email, no_person, package_id } = req.body;
+
+    const data = await db.collection("packages").where("package_id", "==", package_id).get();
+
+// Map the documents to an array with their IDs and data
+const snapshot = data.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+if (snapshot.length === 0) {
+  // If no documents are found
+  return res.status(404).send({ error: `No package found with package_id: ${package_id}` });
+}
+
+// Assuming package_id is unique, fetch the first matching document
+var per_person = snapshot[0].budget;
+
+    // Calculate the amount
+    const amount = no_person * per_person;
+
+    // Fetch visitor_id using the provided email
+    const visitorQuery = await db.collection('visitors').where('email', '==', email).get();
+    const visitorData = visitorQuery.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    if (visitorQuery.empty) {
+      return res.status(404).json({ error: 'Visitor not found' });
     }
-  
-    try {
-      console.log(package_id)
-      // Fetch package details from Firestore
-    //   const packageSnapshot = await db.collection("packages").get();
-  
-    //   if (!packageSnapshot.exists) {
-    //     return res.status(404).send({ error: 'Package not found!' });
-    //   }
-    const data= await db.collection("packages").where("package_id","==",package_id).get();
-    const list=data.docs.map((doc)=> ({id:doc.id, ...doc.data()}))
-      const packageDetails =list[0];
+    const visitor_id = visitorData[0].visitor_id;
 
-      const itinerary = packageDetails.itinerary;
+    // Convert booking_date to Asia/Kolkata timezone
+    const bookingDateInIST = moment.tz(date_time, time_zone_id).tz('Asia/Kolkata').format();
 
-// Create an itinerary description string
-let itineraryDescription = "";
-itinerary.forEach(day => {
-  itineraryDescription += `Day ${day.day}: ${day.activities.join(", ")}\n`;
+
+    const lastBookingSnapshot = await db.collection("booking")
+    .orderBy("booking_id", "desc") // Sort by booking_id in descending order
+    .limit(1) // Get only the latest booking
+    .get();
+
+// Default to 1 if no bookings are found
+let nextBookingId = 1;
+if (!lastBookingSnapshot.empty) {
+    const lastBookingId = lastBookingSnapshot.docs[0].data().booking_id;
+    nextBookingId = lastBookingId + 1; // Increment the last booking_id by 1
+}
+
+    // Prepare booking data
+    const bookingData = {
+      booking_id: nextBookingId,
+      booking_date: bookingDateInIST,
+      no_person,
+      package_id,
+      amount,
+      amount_status: false,
+      otp_verified:false,
+      visitor_email: email,
+      visitor_id,
+      created_at: moment().tz('Asia/Kolkata').format() // Current timestamp in IST
+    };
+
+    // Add booking to the 'bookings' collection
+    const bookingRef = await db.collection('booking').add(bookingData);
+
+    // Send success response
+    res.status(201).json({
+      message: 'Booking created successfully',
+      booking_id: bookingRef.id,
+      booking_data: bookingData
+    });
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-    //   console.log(packageDetails)
-    //   res.send(packageDetails)
-    //   process.exit();
-  
-      // Get the last booking document to auto-increment booking_id
-      const lastBookingSnapshot = await db.collection('booking')
-        .orderBy('booking_id', 'desc')
-        .limit(1)
-        .get();
-  
-      let nextBookingId = 1;
-      if (!lastBookingSnapshot.empty) {
-        const lastBookingId = lastBookingSnapshot.docs[0].data().booking_id;
-        nextBookingId = lastBookingId + 1;
-      }
-  
-      // Add booking data to Firestore
-      const bookingRef = await db.collection('booking').add({
-        booking_id: nextBookingId,
-        visitor_id,
-        visitor_email,
-        package_id,
-        // package_category: packageDetails.package_category,
-        // pricePerPerson: packageDetails.pricePerPerson,
-        booking_date,
-        amount_status: amount_status || false,
-        created_at: currentTimestamp,
-      });
-  
-      // Create a Google Calendar event
-      const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
-  
-      const event = {
-        summary: `Booking: ${packageDetails.package_name}`,
-        location: packageDetails.destination,
-        description: `Booking for package: ${packageDetails.package_name}.\nDetails: ${itineraryDescription}`,
-        start: {
-          dateTime: new Date(booking_date).toISOString(),
-          timeZone: 'Asia/Kolkata',
-        },
-        end: {
-          dateTime: new Date(new Date(booking_date).getTime() + 3600000).toISOString(), // 1-hour duration
-          timeZone: 'Asia/Kolkata',
-        },
-        attendees: [
-          { email: visitor_email },
-        ],
-      };
-  
-      // Insert event into Google Calendar
-      calendar.events.insert(
-        {
-          calendarId: 'primary',
-          resource: event,
-        },
-        (err, eventResponse) => {
-          if (err) {
-            console.error('Error adding event to Google Calendar:', err.message);
-            return res.status(500).send({ error: 'Failed to add event to calendar.' });
-          }
-          console.log('Event created:', eventResponse.data.htmlLink);
-
-          // Generate PDF Invoice
-        const doc = new PDFDocument();
-        const invoicePath = `./invoices/booking_${nextBookingId}.pdf`;
-        doc.pipe(fs.createWriteStream(invoicePath));
-        doc.fontSize(16).text(`Booking Invoice`, { align: 'center' });
-        doc.moveDown();
-        doc.text(`Booking ID: ${nextBookingId}`);
-        doc.text(`Package Name: ${packageDetails.package_name}`);
-        doc.text(`Visitor Email: ${visitor_email}`);
-        doc.text(`Booking Date: ${booking_date}`);
-        doc.text(`Amount Status: Not Paid`);
-        doc.end();
-
-        // Send Email with Invoice
-        const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user:email, pass:pass } });
-        const mailOptions = {
-            from:email,
-            to: visitor_email,
-            subject: `Booking Confirmation: ${packageDetails.package_name}`,
-            text: `Your booking has been confirmed. Please find the invoice attached.`,
-            attachments: [{ filename: `booking_${nextBookingId}.pdf`, path: invoicePath }],
-        };
-
-        transporter.sendMail(mailOptions);
-  
-          // Send success response
-          res.status(201).send({
-            message: 'Booking created and added to Google Calendar.',
-            bookingId: bookingRef.id,
-            calendarEventLink: eventResponse.data.htmlLink,
-          });
-        }
-      );
-    } catch (error) {
-      console.error('Error creating booking:', error.message);
-      res.status(500).send({ error: error.message });
-    }
-  });
   
 
 router.post('/update-booking',async(req,res)=>{
