@@ -343,9 +343,9 @@ router.post('/verify-amount', async (req, res) => {
 
         // Step 3: Return appropriate response based on amount_status
         if (amount_status) {
-            return res.status(200).json({ message: "Amount has been verified", status:"200" });
+            res.status(200).send({ msg: "Amount has been verified", status: "200" });
         } else {
-            return res.status(204).json({ message: "Amount is not yet verified", status:"204" });
+            res.status(200).send({ msg: "Amount is not yet verified", status: "204" });
         }
     } catch (error) {
         console.error("Error verifying amount status:", error);
