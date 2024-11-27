@@ -133,7 +133,7 @@ try {
         .get();
 
     if (packageDetails.empty) {
-        return res.status(404).send({ msg: "No packages found for the provided package IDs." });
+        return res.status(404).send({ msg: "No packages found for the provided package IDs.",packages:"No Booking Found!" });
     }
 
     // Map the package details into a list

@@ -98,10 +98,19 @@ router.post('/get-lead', async (req, res) => {
         const packageList = packageDetails.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
         // Step 4: Send the package list as a response
+        if(!packageList.empty)
+        {
         res.status(200).send({
             msg: "Packages fetched successfully!",
             packages: packageList,
         });
+    }
+    else{
+        res.status(404).send({
+            msg: "No Package Found",
+            packages: "No Lead Found",
+        });
+    }
     } catch (error) {
         res.status(500).send({ msg: "Failed to fetch packages.", error: error.message });
     }
