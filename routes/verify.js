@@ -312,5 +312,47 @@ router.post('/fetch-order-amount', async (req, res) => {
 });
 
 
+router.post('/verify-amount', async (req, res) => {
+    const { email, booking_id } = req.body;
+
+    try {
+        // Step 1: Fetch the visitor document using the email
+        const visitorQuery = await db.collection("visitors").where("email", "==", email).get();
+
+        if (visitorQuery.empty) {
+            return res.status(404).json({ error: "Visitor with this email not found" });
+        }
+
+        // Assuming email is unique, fetch the first matching document
+        const visitorDoc = visitorQuery.docs[0];
+        const visitorId = visitorDoc.id; // Get the visitor ID from the document
+
+        // Step 2: Fetch the booking document using the visitor_id and booking_id
+        const bookingQuery = await db.collection("booking")
+            .where("visitor_id", "==", visitorId)
+            .where("booking_id", "==", booking_id)
+            .get();
+
+        if (bookingQuery.empty) {
+            return res.status(404).json({ error: "No booking found with this visitor ID and booking ID" });
+        }
+
+        // Assuming booking_id is unique, fetch the first matching document
+        const bookingDoc = bookingQuery.docs[0];
+        const { amount_status } = bookingDoc.data(); // Extract the amount_status from the booking document
+
+        // Step 3: Return appropriate response based on amount_status
+        if (amount_status) {
+            return res.status(200).json({ message: "Amount has been verified", status:"200" });
+        } else {
+            return res.status(204).json({ message: "Amount is not yet verified", status:"204" });
+        }
+    } catch (error) {
+        console.error("Error verifying amount status:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+
 
 module.exports = router
