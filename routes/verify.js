@@ -221,12 +221,11 @@ const sendOtpSms = async (phoneNumber, otp) => {
 };
 
 router.post('/verify-otp', async (req, res) => {
-    const { phoneNumber, otp, booking_id } = req.body;
-    // console.log(phoneNumber+otp+booking_id);
+    const { email, otp, booking_id } = req.body;
 
     try {
         // Step 1: Fetch the visitor document with the matching phone number
-        const visitorQuery = await db.collection("visitors").where("phone", "==", phoneNumber).get();
+        const visitorQuery = await db.collection("visitors").where("email", "==",email).get();
 
         if (visitorQuery.empty) {
             return res.status(404).json({ error: "Visitor with this phone number not found" });
@@ -235,7 +234,7 @@ router.post('/verify-otp', async (req, res) => {
         // Assuming phone numbers are unique, fetch the first matching document
         const visitorDoc = visitorQuery.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         // const visitorData = visitorDoc.data();
-
+        
         // Step 2: Verify the OTP
         if (visitorDoc[0].otp !== otp) {
             return res.status(400).json({ error: "Invalid OTP" });
@@ -243,10 +242,11 @@ router.post('/verify-otp', async (req, res) => {
 
         // Step 3: Mark `otp_verified` as true in the visitor document
         const visitorId = visitorDoc[0].visitor_id;
+    
         // await db.collection("visitors").doc(visitorId).update({ otp_verified: true });
 
         // Step 4: Fetch the booking with matching `visitor_id` and `booking_id`
-        const bookingQuery = await db.collection("bookings")
+        const bookingQuery = await db.collection("booking")
             .where("visitor_id", "==", visitorId)
             .where("booking_id", "==", booking_id)
             .get();
@@ -257,7 +257,7 @@ router.post('/verify-otp', async (req, res) => {
 
         // Assuming booking_id is unique, update the first matching booking
         const bookingDoc = bookingQuery.docs[0];
-        await db.collection("bookings").doc(bookingDoc.id).update({ otp_verified: true });
+        await db.collection("booking").doc(bookingDoc.id).update({ otp_verified: true });
 
         // Step 5: Respond with success
         res.status(200).json({
