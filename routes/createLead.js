@@ -109,6 +109,41 @@ router.post('/get-lead', async (req, res) => {
 });
 
 router.post('/delete-lead',async(req,res)=>{
+    var { email, package_id } = req.body;
+    package_id = Number(package_id);
+    
+    try {
+        // Get the visitor_id using the email
+        const visitorDetails = await db.collection("visitors").where("email", "==", email).get();
+        const visitorSnapshot = visitorDetails.docs.map(doc => doc.data())[0];
+    
+        if (visitorDetails.empty) {
+            return res.status(404).send({ msg: "Visitor not found with the provided email." });
+        }
+    
+        const visitorId = visitorSnapshot.visitor_id;
+    
+        // Find the lead in the "leads" collection
+        const leadDetails = await db.collection("leads")
+            .where("visitor_id", "==", visitorId)
+            .where("package_id", "==", package_id)
+            .get();
+    
+        if (leadDetails.empty) {
+            return res.status(404).send({ msg: "No lead found with the provided details." });
+        }
+    
+        // Delete the lead(s)
+        const batch = db.batch();
+        leadDetails.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+    
+        res.status(200).send({ msg: "Lead(s) deleted successfully!" });
+    } catch (error) {
+        res.status(500).send({ msg: "Failed to delete lead!", error: error.message });
+    }
     
 })
 
