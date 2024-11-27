@@ -82,7 +82,7 @@ if (!lastBookingSnapshot.empty) {
 
     // Send success response
     res.status(201).json({
-      message: 'Booking created successfully', status:"201"
+      message: 'Booking created successfully', status:"201" ,booking_id: nextBookingId
     });
   } catch (error) {
     console.error('Error creating booking:', error);
