@@ -205,4 +205,17 @@ try {
 
 })
 
+router.post("/sample-book",async (req,res)=>{
+  const data=req.body;
+  // console.log(data) 
+  await db.collection("book").add(data)
+  if (res.statusCode==200)
+  {
+      res.send({msg:"jechitom mara!"})
+  }
+  else{
+      res.send({msg:"vanakam da mapla else la irrunthu"})
+  }
+}) 
+
 module.exports = router
