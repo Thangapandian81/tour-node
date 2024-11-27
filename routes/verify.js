@@ -262,8 +262,7 @@ router.post('/verify-otp', async (req, res) => {
         // Step 5: Respond with success
         res.status(200).json({
             message: "OTP verified successfully and updated in both visitors and the specific booking",
-            visitor_id: visitorId,
-            booking_id
+            status:"200"
         });
     } catch (error) {
         console.error("Error verifying OTP:", error);
