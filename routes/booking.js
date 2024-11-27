@@ -164,7 +164,7 @@ doc.end();
     const mailOptions = {
       from:aemail,
       to: email,
-      subject: `Booking Confirmation: ${package_name}`,
+      subject: `Booking Confirmation: ${Title}`,
       text: `Your booking has been confirmed. Please find the invoice attached.`,
       attachments: [{ filename: `booking_${booking_id}.pdf`, path: invoicePath }],
     };
