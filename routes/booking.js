@@ -82,7 +82,7 @@ if (!lastBookingSnapshot.empty) {
     const bookingRef = await db.collection('booking').add(bookingData);
 
     // Generate PDF Invoice
-    const invoicePath = `./invoices/booking_${booking_id}.pdf`;
+    const invoicePath = `./invoices/booking_${nextBookingId}.pdf`;
 const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
 // Background Color for Header Section
