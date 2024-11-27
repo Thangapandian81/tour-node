@@ -7,7 +7,7 @@ const router = express.Router();
 const app = express();
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'mail.json')));
 
-const { email, pass } = credentials.installed;
+const { aemail, apass } = credentials.installed;
 // Middleware to parse JSON bodies
 app.use(express.json());
 
@@ -15,8 +15,8 @@ app.use(express.json());
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: email,
-    pass: pass
+    user: aemail,
+    pass: apass
   }
 });
 

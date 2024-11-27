@@ -11,7 +11,7 @@ const PDFDocument = require('pdfkit');
 const nodemailer= require('nodemailer')
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'mail.json')));
 
-const {email,pass}=credentials.installed;
+const {aemail,apass}=credentials.installed;
 
 const app = express();
 
@@ -35,6 +35,7 @@ if (snapshot.length === 0) {
 
 // Assuming package_id is unique, fetch the first matching document
 var per_person = snapshot[0].budget;
+var Title=snapshot[0].package_name;
 
     // Calculate the amount
     const amount = no_person * per_person;
@@ -79,6 +80,106 @@ if (!lastBookingSnapshot.empty) {
 
     // Add booking to the 'bookings' collection
     const bookingRef = await db.collection('booking').add(bookingData);
+
+    // Generate PDF Invoice
+    const invoicePath = `./invoices/booking_${booking_id}.pdf`;
+const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
+// Background Color for Header Section
+doc.rect(0, 0, doc.page.width, 150).fill('#E3F2FD'); // Light blue background for the header
+
+// Header Section: Company Details
+const companyName = "Zholidays";
+const companyAddress = "Zoho Coporation";
+const companyPhone = "+91-9159097924";
+const companyEmail = "contact@cliqtrix.com";
+
+doc.fill('#01579B') // Dark blue for header text
+  .fontSize(20)
+  .text(companyName, { align: 'center', lineGap: 5 })
+  .fontSize(12)
+  .text(companyAddress, { align: 'center' })
+  .text(`Phone: ${companyPhone} | Email: ${companyEmail}`, { align: 'center',lineGap:10 })
+  .moveDown();
+
+// Title Section
+doc.fill('#000').fontSize(16).text('Booking Invoice', { align: 'center' }).moveDown();
+
+// Add a Line Below Header
+// doc.moveTo(50, 120).lineTo(550, 120).stroke('#B0BEC5');
+
+// Booking Details in Table Format
+doc.fontSize(12).moveDown().text('Booking Details:', { underline: true }).moveDown();
+
+// Table Header
+doc.fill('#01579B') // Dark blue for header background
+  .rect(50, doc.y, 500, 20).fill()
+  .fillColor('#FFF')
+  .text('Field', 60, doc.y + 5)
+  .text('Details', 300, doc.y + 5);
+
+// Table Content
+const fields = [
+  // { field: 'Booking ID', details: booking_id },
+  { field: 'Package Name', details: Title },
+  { field: 'Visitor Email', details: email },
+  { field: 'Booking Date', details: bookingDateInIST },
+  { field:  'Amount Per person', details:`Rs.${per_person.toFixed(2)}`},
+  {field:  'No of Person', details:no_person},
+  { field: 'Total Amount', details: `Rs.${amount.toFixed(2)}` },
+  { field: 'Amount Status', details: 'Not Paid' },
+];
+
+let yPosition = doc.y + 25;
+doc.fill('#000'); // Reset text color to black
+
+fields.forEach(({ field, details }) => {
+  doc.text(field, 60, yPosition)
+    .text(details, 300, yPosition);
+  yPosition += 20;
+});
+
+// Footer Section
+doc.moveDown().moveTo(50, 750).lineTo(550, 750).stroke('#B0BEC5');
+
+doc.fontSize(10)
+  .fill('#000')
+  .text('Thank you for booking with Zholidays!', 50, 760, { align: 'center' })
+  .text('For any enquiries, contact us at contact@cliqtrix.com', 50, 775, { align: 'center' });
+
+// End Document
+doc.end();
+
+
+    // Save the invoice
+    const fs = require('fs');
+    doc.pipe(fs.createWriteStream(invoicePath));
+
+    // Send Email with Invoice
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: aemail, pass: apass },
+    });
+
+    const mailOptions = {
+      from:aemail,
+      to: email,
+      subject: `Booking Confirmation: ${package_name}`,
+      text: `Your booking has been confirmed. Please find the invoice attached.`,
+      attachments: [{ filename: `booking_${booking_id}.pdf`, path: invoicePath }],
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.error('Error sending email:', err.message);
+        return res.status(500).send({ error: 'Failed to send email.' });
+      }
+
+      console.log('Email sent:', info.response);
+    });
+
+
+    
 
     // Send success response
     res.status(201).json({
@@ -150,17 +251,175 @@ try {
 
 })
 
-router.post("/sample-book",async (req,res)=>{
-  const data=req.body;
-  // console.log(data) 
-  await db.collection("book").add(data)
-  if (res.statusCode==200)
-  {
-      res.send({msg:"jechitom mara!"})
+router.post('/create-event', async (req, res) => {
+  const { email, booking_id } = req.body;
+
+  try {
+    // Fetch booking details from Firestore
+    const bookingSnapshot = await db.collection('booking')
+      .where('booking_id', '==', booking_id)
+      .where('visitor_email', '==', email)
+      .get();
+
+    if (bookingSnapshot.empty) {
+      return res.status(404).send({ error: 'Booking not found!' });
+    }
+
+    const bookingData = bookingSnapshot.docs[0].data();
+    const { package_id, booking_date, amount,no_person } = bookingData;
+
+    // Fetch package details from Firestore
+    const packageSnapshot = await db.collection('packages')
+      .where('package_id', '==', package_id)
+      .get();
+
+    if (packageSnapshot.empty) {
+      return res.status(404).send({ error: 'Package details not found!' });
+    }
+
+    const packageDetails = packageSnapshot.docs[0].data();
+    const { package_name, destination, itinerary,budget } = packageDetails;
+
+    // Create an itinerary description string
+    let itineraryDescription = "";
+    itinerary.forEach(day => {
+      itineraryDescription += `Day ${day.day}: ${day.activities.join(", ")}\n`;
+    });
+
+    // Create a Google Calendar event
+    const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
+
+    const event = {
+      summary: `Booking: ${package_name}`,
+      location: destination,
+      description: `Package Details:\n${itineraryDescription}`,
+      start: {
+        dateTime: new Date(booking_date).toISOString(),
+        timeZone: 'Asia/Kolkata',
+      },
+      end: {
+        dateTime: new Date(booking_date).toISOString(), // Same as start time
+        timeZone: 'Asia/Kolkata',
+      },
+      attendees: [
+        { email },
+      ],
+    };
+
+    const eventResponse = await calendar.events.insert({
+      calendarId: 'primary',
+      resource: event,
+    });
+
+    console.log('Event created:', eventResponse.data.htmlLink);
+
+    // Generate PDF Invoice
+    const invoicePath = `./invoices/booking_${booking_id}.pdf`;
+const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
+// Background Color for Header Section
+doc.rect(0, 0, doc.page.width, 150).fill('#E3F2FD'); // Light blue background for the header
+
+// Header Section: Company Details
+const companyName = "Zholidays";
+const companyAddress = "Zoho Coporation";
+const companyPhone = "+91-9159097924";
+const companyEmail = "contact@cliqtrix.com";
+
+doc.fill('#01579B') // Dark blue for header text
+  .fontSize(20)
+  .text(companyName, { align: 'center', lineGap: 5 })
+  .fontSize(12)
+  .text(companyAddress, { align: 'center' })
+  .text(`Phone: ${companyPhone} | Email: ${companyEmail}`, { align: 'center',lineGap:10 })
+  .moveDown();
+
+// Title Section
+doc.fill('#000').fontSize(16).text('Booking Invoice', { align: 'center' }).moveDown();
+
+// Add a Line Below Header
+// doc.moveTo(50, 120).lineTo(550, 120).stroke('#B0BEC5');
+
+// Booking Details in Table Format
+doc.fontSize(12).moveDown().text('Booking Details:', { underline: true }).moveDown();
+
+// Table Header
+doc.fill('#01579B') // Dark blue for header background
+  .rect(50, doc.y, 500, 20).fill()
+  .fillColor('#FFF')
+  .text('Field', 60, doc.y + 5)
+  .text('Details', 300, doc.y + 5);
+
+// Table Content
+const fields = [
+  // { field: 'Booking ID', details: booking_id },
+  { field: 'Package Name', details: package_name },
+  { field: 'Visitor Email', details: email },
+  { field: 'Booking Date', details: booking_date },
+  { field:  'Amount Per person', details:`Rs.${budget.toFixed(2)}`},
+  {field:  'No of Person', details:no_person},
+  { field: 'Total Amount', details: `Rs.${amount.toFixed(2)}` },
+  { field: 'Amount Status', details: 'Paid' },
+];
+
+let yPosition = doc.y + 25;
+doc.fill('#000'); // Reset text color to black
+
+fields.forEach(({ field, details }) => {
+  doc.text(field, 60, yPosition)
+    .text(details, 300, yPosition);
+  yPosition += 20;
+});
+
+// Footer Section
+doc.moveDown().moveTo(50, 750).lineTo(550, 750).stroke('#B0BEC5');
+
+doc.fontSize(10)
+  .fill('#000')
+  .text('Thank you for booking with Zholidays!', 50, 760, { align: 'center' })
+  .text('For any enquiries, contact us at contact@cliqtrix.com', 50, 775, { align: 'center' });
+
+// End Document
+doc.end();
+
+
+    // Save the invoice
+    const fs = require('fs');
+    doc.pipe(fs.createWriteStream(invoicePath));
+
+    // Send Email with Invoice
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: aemail, pass: apass },
+    });
+
+    const mailOptions = {
+      from:aemail,
+      to: email,
+      subject: `Booking Confirmation: ${package_name}`,
+      text: `Your booking has been confirmed. Please find the invoice attached.`,
+      attachments: [{ filename: `booking_${booking_id}.pdf`, path: invoicePath }],
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.error('Error sending email:', err.message);
+        return res.status(500).send({ error: 'Failed to send email.' });
+      }
+
+      console.log('Email sent:', info.response);
+
+      // Send success response
+      res.status(200).send({
+        message: 'Event created, invoice generated, and email sent.',
+        calendarEventLink: eventResponse.data.htmlLink,
+      });
+    });
+  } catch (error) {
+    console.error('Error in /create-event:', error.message);
+    res.status(500).send({ error: error.message });
   }
-  else{
-      res.send({msg:"vanakam da mapla else la irrunthu"})
-  }
-}) 
+});
+
 
 module.exports = router
