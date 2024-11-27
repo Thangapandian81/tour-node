@@ -166,7 +166,7 @@ doc.end();
       to: email,
       subject: `Booking Confirmation: ${Title}`,
       text: `Your booking has been confirmed. Please find the invoice attached.`,
-      attachments: [{ filename: `booking_${booking_id}.pdf`, path: invoicePath }],
+      attachments: [{ filename: `booking_${nextBookingId}.pdf`, path: invoicePath }],
     };
 
     transporter.sendMail(mailOptions, (err, info) => {
