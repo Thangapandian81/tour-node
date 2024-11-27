@@ -17,6 +17,7 @@ const authRoutes=require('./routes/auth');
 const striptRoutes=require('./routes/stripe')
 const mailRoutes=require('./routes/mail')
 const findRoutes=require('./routes/findpackages')
+const razorRoutes=require('./routes/razor')
 const { auth } = require('firebase-admin');
 
 
@@ -30,6 +31,7 @@ app.use('/auth',authRoutes)
 app.use('/stripe',striptRoutes)
 app.use('/mail',mailRoutes)
 app.use('/find',findRoutes)
+app.use('/razor'razorRoutes)
 
 
 // app.post("/sample",async (req,res)=>{
