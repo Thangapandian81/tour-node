@@ -222,6 +222,7 @@ const sendOtpSms = async (phoneNumber, otp) => {
 
 router.post('/verify-otp', async (req, res) => {
     const { phoneNumber, otp, booking_id } = req.body;
+    // console.log(phoneNumber+otp+booking_id);
 
     try {
         // Step 1: Fetch the visitor document with the matching phone number
@@ -236,7 +237,7 @@ router.post('/verify-otp', async (req, res) => {
         // const visitorData = visitorDoc.data();
 
         // Step 2: Verify the OTP
-        if (visitorDoc.otp !== otp) {
+        if (visitorDoc[0].otp !== otp) {
             return res.status(400).json({ error: "Invalid OTP" });
         }
 
