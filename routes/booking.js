@@ -479,4 +479,80 @@ doc.end();
 });
 
 
+router.post('/sample-pending', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+      // Step 1: Get the visitor ID using the email
+      const visitorDetails = await db.collection("visitors").where("email", "==", email).get();
+      const visitorSnapshot = visitorDetails.docs.map(doc => doc.data())[0];
+
+      if (!visitorSnapshot) {
+          return res.status(404).send({ msg: "Booking not found with the provided email." });
+      }
+
+      const visitorId = visitorSnapshot.visitor_id;
+
+      // Step 2: Get booking details using the visitor ID
+      const bookingSnapshot = await db.collection("booking")
+          .where("visitor_id", "==", visitorId)
+          .where("amount_status", "==", false)
+          .get();
+
+      if (bookingSnapshot.empty) {
+          return res.status(404).send({ msg: "No bookings found for the provided visitor." });
+      }
+
+      // Extract `package_id`, `booking_id`, `amount`, and `no_person` from booking entries
+      const bookList = bookingSnapshot.docs.map(doc => ({
+          booking_id: doc.id,
+          ...doc.data(),
+      }));
+
+      const packageIds = bookList.map(booking => booking.package_id);
+
+      if (packageIds.length === 0) {
+          return res.status(404).send({ msg: "No package IDs found in booking records for the visitor." });
+      }
+
+      // Step 3: Fetch packages from the `packages` table
+      const packageDetails = await db.collection("packages")
+          .where("package_id", "in", packageIds)
+          .get();
+
+      if (packageDetails.empty) {
+          return res.status(404).send({
+              msg: "No packages found for the provided package IDs.",
+              packages: "No Booking Found!",
+          });
+      }
+
+      // Map the package details into a list
+      const packageList = packageDetails.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+      }));
+
+      // Step 4: Combine booking and package details
+      const responseList = bookList.map(booking => {
+          const packageDetail = packageList.find(pkg => pkg.package_id === booking.package_id);
+          return {
+              booking_id: booking.booking_id,
+              amount: booking.amount,
+              no_person: booking.no_person,
+              package: packageDetail || null, // Include the package details
+          };
+      });
+
+      // Step 5: Send the combined details as a response
+      res.status(200).send({
+          msg: "Packages and bookings fetched successfully!",
+          bookings: responseList,
+      });
+  } catch (error) {
+      res.status(500).send({ msg: "Failed to fetch packages and bookings.", error: error.message });
+  }
+});
+
+
 module.exports = router
