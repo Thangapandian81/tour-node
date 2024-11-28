@@ -214,6 +214,7 @@ try {
     // Step 2: Get booking details using the visitor ID
     const bookingSnapshot = await db.collection("booking")
         .where("visitor_id", "==", visitorId)
+        .where("amount_status","==",true)
         .get();
 
     if (bookingSnapshot.empty) {
