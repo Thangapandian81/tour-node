@@ -247,6 +247,7 @@ try {
         packages: packageList,
     });
 } catch (error) {
+
     res.status(500).send({ msg: "Failed to fetch packages.", error: error.message });
 }
 
@@ -551,6 +552,43 @@ router.post('/sample-pending', async (req, res) => {
       });
   } catch (error) {
       res.status(500).send({ msg: "Failed to fetch packages and bookings.", error: error.message });
+  }
+});
+
+
+router.post('/feedback', async (req, res) => {
+  try {
+    // Destructure email and rating from the request body
+    const { email, rating } = req.body;
+
+    // Validate input
+    if (!email || !rating) {
+      return res.status(400).json({ status: '400', message: 'Email and Rating are required.' });
+    }
+
+    // Get the current feedback count to generate the feedback_id
+    const feedbackRef = db.collection('feedback');
+    const snapshot = await feedbackRef.get();
+    const feedbackCount = snapshot.size + 1;  // Auto-increment feedback_id
+
+    // Prepare feedback data
+    const feedbackData = {
+      feedback_id: feedbackCount,
+      email: email,
+      rating: rating,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    // Store the feedback data in the 'feedback' collection
+    await feedbackRef.add(feedbackData);
+
+    // Send success response
+    return res.status(200).json({ status: '200', message: 'Feedback submitted successfully.' });
+
+  } catch (error) {
+    console.error("Error storing feedback: ", error);
+    // Send failure response
+    return res.status(400).json({ status: '400', message: 'Failed to submit feedback.' });
   }
 });
 
