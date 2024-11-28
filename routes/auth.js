@@ -78,7 +78,7 @@ router.get('/google/callback', async (req, res) => {
         <body>
           <div class="container">
             <img src="https://media.tenor.com/0cvxil96K7YAAAAj/check.gif" alt="Success" class="tick-mark">
-            <div class="message">OAuth verified successfully for visitor: ${visitor_id}.</div>
+            <div class="message">OAuth verified successfully.</div>
             <div class="message">You can close this page. Thank you!</div>
           </div>
         </body>
