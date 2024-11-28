@@ -168,11 +168,12 @@ router.post('/verify-email', async (req, res) => {
 })
 
 router.post('/send-otp', async (req, res) => {
-    const { phoneNumber } = req.body;
+    var { phoneNumber,email } = req.body;
+    phoneNumber=Number(phoneNumber);
     const otp = Math.floor(100000 + Math.random() * 900000); // Generates a 6-digit OTP
 
        // Query the visitors collection for the matching phone number
-       const visitorQuery = await db.collection("visitors").where("phone", "==", phoneNumber).get();
+       const visitorQuery = await db.collection("visitors").where("email", "==", email).get();
 
        if (visitorQuery.empty) {
            return res.status(404).json({ error: "Visitor with this phone number not found" });
