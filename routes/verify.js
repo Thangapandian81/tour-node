@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 const { db } = require('../config/firebaseConfig')
 const router = express.Router();
 const axios = require('axios')
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 
@@ -118,6 +120,55 @@ router.post('/verify-oauth', async (req, res) => {
         res.status(500).send({ msg: "Error checking email.", error: error.message });
     }
 })
+
+
+
+router.post('/verify-token', async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Step 1: Fetch visitor details using email
+        const visitorSnapshot = await db.collection("visitors")
+            .where("email", "==", email)
+            .limit(1)
+            .get();
+
+        if (visitorSnapshot.empty) {
+            return res.status(404).send({ 
+                msg: "Visitor not found with the provided email.", 
+                status: "404" 
+            });
+        }
+
+        const visitorData = visitorSnapshot.docs.map(doc => doc.data())[0];
+        const visitorId = visitorData.visitor_id;
+        // console.log(visitorId);
+        // process.exit();
+
+        // Step 2: Construct the file path
+        const filePath = path.join(__dirname, '..', 'tokens', `${visitorId}.json`);
+
+        // Step 3: Check if the token file exists
+        if (fs.existsSync(filePath)) {
+            return res.status(200).send({
+                msg: "Token exists for the visitor.",
+                status: "200",
+            });
+        } else {
+            return res.status(404).send({
+                msg: "Token does not exist for the visitor.",
+                status: "404",
+            });
+        }
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        res.status(500).send({
+            msg: "Error verifying token.",
+            error: error.message,
+        });
+    }
+});
+
 
 
 
