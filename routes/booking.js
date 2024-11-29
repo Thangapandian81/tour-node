@@ -48,6 +48,9 @@ var Title=snapshot[0].package_name;
     }
     const visitor_id = visitorData[0].visitor_id;
 
+
+    
+
     // Convert booking_date to Asia/Kolkata timezone
     const bookingDateInIST = moment.tz(date_time, time_zone_id).tz('Asia/Kolkata').format();
 
@@ -82,7 +85,7 @@ if (!lastBookingSnapshot.empty) {
     const bookingRef = await db.collection('booking').add(bookingData);
 
     // Generate PDF Invoice
-    const invoicePath = `./invoices/booking_${nextBookingId}.pdf`;
+    const invoicePath = `../invoices/booking_${nextBookingId}.pdf`;
 const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
 // Background Color for Header Section
@@ -372,7 +375,7 @@ router.post('/create-event', async (req, res) => {
     console.log('Event created:', eventResponse.data.htmlLink);
 
     // Generate PDF Invoice
-    const invoicePath = `./invoices/booking_${booking_id}.pdf`;
+    const invoicePath = `../invoices/booking_${booking_id}.pdf`;
 const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
 // Background Color for Header Section
