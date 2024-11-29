@@ -80,20 +80,24 @@ router.post('/update-name', async (req, res) => {
             return res.status(400).send({ msg: "Visitor not found with the provided email." });
         }
 
-        // Step 2: Update the visitor's name and phone number
+        // Step 2: Remove +91 from the phone number (if it exists)
+        const cleanedPhone = phone.replace(/^(\+91|\+91\s|\+91-|\s|\-)/, "");
+
+        // Step 3: Update the visitor's name and phone number
         const visitorDocId = visitorRef.docs[0].id; // Assuming `email` is unique
         await db.collection("visitors").doc(visitorDocId).update({
             name,
-            phone
+            phone: cleanedPhone
         });
 
-        // Step 3: Send success response
-        return res.status(200).send({ msg: "Visitor details updated successfully!" ,status:"200"  });
+        // Step 4: Send success response
+        return res.status(200).send({ msg: "Visitor details updated successfully!", status: "200" });
     } catch (error) {
-        // Step 4: Handle errors
-        return res.status(400).send({ msg: "Failed to update visitor details.", error: error.message ,status:"400"  });
+        // Step 5: Handle errors
+        return res.status(400).send({ msg: "Failed to update visitor details.", error: error.message, status: "400" });
     }
 });
+
 
 
 router.post('/verify-oauth', async (req, res) => {
