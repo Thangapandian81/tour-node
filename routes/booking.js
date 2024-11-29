@@ -85,8 +85,9 @@ if (!lastBookingSnapshot.empty) {
     const bookingRef = await db.collection('booking').add(bookingData);
 
     // Generate PDF Invoice
-    const invoicePath = `../invoices/booking_${nextBookingId}.pdf`;
+    const invoicePath = `./invoices/booking_${nextBookingId}.pdf`;
 const doc = new PDFDocument({ size: 'A4', margin: 50 });
+doc.pipe(fs.createWriteStream(invoicePath));
 
 // Background Color for Header Section
 doc.rect(0, 0, doc.page.width, 150).fill('#E3F2FD'); // Light blue background for the header
@@ -154,8 +155,7 @@ doc.fontSize(10)
 doc.end();
 
 
-    // Save the invoice
-    const fs = require('fs');
+  
     doc.pipe(fs.createWriteStream(invoicePath));
 
     // Send Email with Invoice
@@ -375,8 +375,9 @@ router.post('/create-event', async (req, res) => {
     console.log('Event created:', eventResponse.data.htmlLink);
 
     // Generate PDF Invoice
-    const invoicePath = `../invoices/booking_${booking_id}.pdf`;
+    const invoicePath = `./invoices/booking_${booking_id}.pdf`;
 const doc = new PDFDocument({ size: 'A4', margin: 50 });
+doc.pipe(fs.createWriteStream(invoicePath));
 
 // Background Color for Header Section
 doc.rect(0, 0, doc.page.width, 150).fill('#E3F2FD'); // Light blue background for the header
