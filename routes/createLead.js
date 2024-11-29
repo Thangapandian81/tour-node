@@ -60,7 +60,7 @@ router.post('/get-lead', async (req, res) => {
 
     try {
         // Step 1: Get the visitor ID using the email
-        const visitorDetails = await db.collection("visitors").where("email", "==", email).where("lead_status","==",true).get();
+        const visitorDetails = await db.collection("visitors").where("email", "==", email).get();
         const visitorSnapshot = visitorDetails.docs.map(doc => doc.data())[0];
     
         if (!visitorSnapshot) {
@@ -72,6 +72,7 @@ router.post('/get-lead', async (req, res) => {
         // Step 2: Get the lead details using the visitor ID
         const leadsSnapshot = await db.collection("leads")
             .where("visitor_id", "==", visitorId)
+            .where("lead_status","==",true)
             .get();
     
         if (leadsSnapshot.empty) {
