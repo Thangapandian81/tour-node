@@ -48,7 +48,41 @@ var Title=snapshot[0].package_name;
     }
     const visitor_id = visitorData[0].visitor_id;
 
-
+    const leadsRef = db.collection('leads');
+    const querySnapshot = await leadsRef
+        .where('package_id', '==', package_id)
+        .where('visitor_id', '==', visitor_id)
+        .get();
+    
+    // Check if we found any matching documents
+    if (querySnapshot.empty) {
+        console.log('No matching lead found');
+        return;
+    }
+    
+    // Assuming you have only one lead for the combination of package_id and visitor_id,
+    // fetch the lead_id from the first matching document
+    let leadId = null;
+    querySnapshot.forEach(doc => {
+        leadId = doc.data().lead_id; // Assuming lead_id is stored as a field in the document
+    });
+    // console.log(leadId);
+    const updatelead = await leadsRef
+        .where('lead_id', '==',leadId)
+        .get();
+    
+    const usnapshot = updatelead.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    // Now, use the fetched lead_id to get the document and update the lead_status
+    if (leadId) {
+        // Fetch the document by lead_id
+        const leadDocRef = db.collection('leads').doc(usnapshot[0].id);
+        await leadDocRef.update({
+            lead_status: false
+        });
+        console.log(`Lead with ID ${leadId} has been updated`);
+    } else {
+        console.log('Lead ID not found');
+    }
     
 
     // Convert booking_date to Asia/Kolkata timezone

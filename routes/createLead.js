@@ -41,6 +41,7 @@ router.post('/create-lead', async (req, res) => {
         const newLead = {
             lead_id: nextLeadId,
             visitor_id: visitorId,
+            lead_status:true,
             package_id: package_id,
             created_at: currentTimestamp
         };
@@ -59,7 +60,7 @@ router.post('/get-lead', async (req, res) => {
 
     try {
         // Step 1: Get the visitor ID using the email
-        const visitorDetails = await db.collection("visitors").where("email", "==", email).get();
+        const visitorDetails = await db.collection("visitors").where("email", "==", email).where("lead_status","==",true).get();
         const visitorSnapshot = visitorDetails.docs.map(doc => doc.data())[0];
     
         if (!visitorSnapshot) {
