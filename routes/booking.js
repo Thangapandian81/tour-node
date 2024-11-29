@@ -3,7 +3,7 @@ const { oAuth2Client } = require('../googleCalendar');
 const bodyParser = require('body-parser');
 const {db}=require('../config/firebaseConfig')
 const { google } = require('googleapis');
-const fs=require('fs')
+// const fs=require('fs')
 const path=require('path')
 const router = express.Router();
 const moment = require('moment-timezone');
@@ -87,7 +87,6 @@ if (!lastBookingSnapshot.empty) {
     // Generate PDF Invoice
     const invoicePath = `./invoices/booking_${nextBookingId}.pdf`;
 const doc = new PDFDocument({ size: 'A4', margin: 50 });
-doc.pipe(fs.createWriteStream(invoicePath));
 
 // Background Color for Header Section
 doc.rect(0, 0, doc.page.width, 150).fill('#E3F2FD'); // Light blue background for the header
@@ -155,7 +154,7 @@ doc.fontSize(10)
 doc.end();
 
 
-  
+    const fs=require('fs');
     doc.pipe(fs.createWriteStream(invoicePath));
 
     // Send Email with Invoice
@@ -377,7 +376,7 @@ router.post('/create-event', async (req, res) => {
     // Generate PDF Invoice
     const invoicePath = `./invoices/booking_${booking_id}.pdf`;
 const doc = new PDFDocument({ size: 'A4', margin: 50 });
-doc.pipe(fs.createWriteStream(invoicePath));
+// doc.pipe(fs.createWriteStream(invoicePath));
 
 // Background Color for Header Section
 doc.rect(0, 0, doc.page.width, 150).fill('#E3F2FD'); // Light blue background for the header
