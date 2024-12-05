@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {db}=require('../../config/firebaseConfig')
 const router = express.Router();
+const Amadeus= require("amadeus");
 
 const app = express();
 
@@ -112,5 +113,51 @@ try {
 
 
 })
+
+
+
+router.post('/flight-offers', async (req, res) => {
+    try {
+        // Extract package_id and date from the request body
+        const { package_id, date } = req.body;
+
+        if (!package_id || !date) {
+            return res.status(400).send({ error: 'package_id and date are required' });
+        }
+
+        // Fetch package details from the database using package_id
+        const packageSnapshot = await db.collection("packages").where("package_id", "==", package_id).get();
+        const packageData = packageSnapshot.docs.map(doc => doc.data())[0];
+       
+        // Extract location_code and convert date to IST (optional for client-side processing)
+        const LocationCode = packageData.location_code;
+        const formattedDate = new Date(date.date_time).toISOString().split('T')[0]; // YYYY-MM-DD format
+
+        if (!LocationCode) {
+            return res.status(404).send({ error: 'Destination location code not found in the package details' });
+        }
+        // Fetch flight offers from Amadeus
+        const response = await Amadeus.shopping.flightOffersSearch.get({
+            originLocationCode: "IND", // Default origin location
+            destinationLocationCode:LocationCode ,
+            // destinationLocationCode:"GVA",
+            departureDate: formattedDate,
+            adults: "2"
+        });
+
+        // Extract and format relevant flight itineraries
+        // console.log(response);
+        const result = response.data.slice(0, 3).map((flight) => flight.itineraries);
+
+        // Send the response with package and flight details
+        res.send({
+            package: packageData,
+            flights: result
+        });
+    } catch (error) {
+        console.error('Error fetching flight offers:', error);
+        res.status(500).send({ error: 'An error occurred while fetching flight offers' });
+    }
+});
 
 module.exports = router
