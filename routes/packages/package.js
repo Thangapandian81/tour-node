@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {db}=require('../../config/firebaseConfig')
 const router = express.Router();
-const Amadeus= require("amadeus");
+const amadeus= require("amadeus");
 
 const app = express();
 
