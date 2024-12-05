@@ -137,7 +137,7 @@ router.post('/flight-offers', async (req, res) => {
             return res.status(404).send({ error: 'Destination location code not found in the package details' });
         }
         // Fetch flight offers from Amadeus
-        const response = await Amadeus.shopping.flightOffersSearch.get({
+        const response = await amadeus.shopping.flightOffersSearch.get({
             originLocationCode: "IND", // Default origin location
             destinationLocationCode:LocationCode ,
             // destinationLocationCode:"GVA",
