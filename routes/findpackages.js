@@ -1,6 +1,7 @@
 const express = require('express');
 const router=express.Router();
 const {db}=require('../config/firebaseConfig');
+const fsqDevelopers = require('@api/fsq-developers');
 
 router.get('/find-package', async (req, res) => {
     try {
@@ -60,6 +61,17 @@ router.get('/find-package', async (req, res) => {
         console.error('Error:', error);
         res.status(500).send({ message: 'Internal Server Error', error: error.message });
     }
+});
+
+router.get('/hotel-search',async(req,res)=>{
+
+    const {query,latlong}= req.query;
+
+    fsqDevelopers.auth('fsq32B9+kGYiSjUHu3fFlOab/KLALOCHmEbcbrPPqidKg0M=');
+    fsqDevelopers.placeSearch({query:query, ll:latlong})
+  .then(({ data }) =>res.send(data))
+  .catch(err => console.error(err));
+    
 });
 
 
