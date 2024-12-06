@@ -36,17 +36,17 @@ app.use('/razor',razorRoutes)
 app.use('/ai',aiRoutes)
 
 
-// app.post("/sample",async (req,res)=>{
-//     const data=req.body; 
-//     await db.collection("booking").add(data)
-//     if (res.statusCode==200)
-//     {
-//         res.send({msg:"jechitom mara!"})
-//     }
-//     else{
-//         res.send({msg:"vanakam da mapla else la irrunthu"})
-//     }
-// }) 
+app.post("/sample",async (req,res)=>{
+    const data=req.body; 
+    await db.collection("sample").add(data)
+    if (res.statusCode==200)
+    {
+        res.send({msg:"jechitom mara!"})
+    }
+    else{
+        res.send({msg:"vanakam da mapla else la irrunthu"})
+    }
+}) 
 
 // app.get('/get-user',async(req,res)=>{
 //     const data= await db.collection("visitors").get();
