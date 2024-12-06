@@ -136,7 +136,7 @@ router.post('/flight-offers', async (req, res) => {
        
         // Extract location_code and convert date to IST (optional for client-side processing)
         const LocationCode = packageData.location_code;
-        const formattedDate = new Date(date.date_time).toISOString().split('T')[0]; // YYYY-MM-DD format
+        // const formattedDate = new Date(date.date_time).toISOString().split('T')[0]; // YYYY-MM-DD format
 
         if (!LocationCode) {
             return res.status(404).send({ error: 'Destination location code not found in the package details' });
@@ -146,7 +146,7 @@ router.post('/flight-offers', async (req, res) => {
             originLocationCode: "IND", // Default origin location
             destinationLocationCode:LocationCode ,
             // destinationLocationCode:"GVA",
-            departureDate: formattedDate,
+            departureDate:date,
             adults: "2"
         });
 
