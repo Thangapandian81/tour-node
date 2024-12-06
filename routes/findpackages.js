@@ -55,8 +55,11 @@ router.get('/find-package', async (req, res) => {
         if (filteredPackages.length === 0) {
             return res.status(404).send({ message: 'No matching packages found' });
         }
+        else{
+            res.status(200).json(filteredPackages);
+        }
 
-        res.status(200).json(filteredPackages);
+       
     } catch (error) {
         console.error('Error:', error);
         res.status(500).send({ message: 'Internal Server Error', error: error.message });
