@@ -39,11 +39,11 @@ try {
     
 })
 
-router.get('/get-category',async(req,res)=>{
-    const data= await db.collection("category").get();
-    const list=data.docs.map((doc)=> ({id:doc.id, ...doc.data()}))
-    res.send(list)
-})
+// router.get('/get-category',async(req,res)=>{
+//     const data= await db.collection("category").get();
+//     const list=data.docs.map((doc)=> ({id:doc.id, ...doc.data()}))
+//     res.send(list)
+// })
 
 router.post('/update-category',async(req,res)=>{
     const cat_id = req.body.cat_id;
