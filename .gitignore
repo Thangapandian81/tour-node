@@ -1,1 +1,17 @@
 node_modules
+
+tokens
+
+firebaseServiceAccount.json
+
+.api
+
+mail.json 
+
+razor.json 
+
+stripe.json
+
+googleCalendarCredentials.json 
+
+token.json
