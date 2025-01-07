@@ -2,15 +2,11 @@ node_modules
 
 tokens
 
-firebaseServiceAccount.json
+config/*.json
 
 .api
 
-mail.json 
-
-razor.json 
-
-stripe.json
+routes/*.json 
 
 googleCalendarCredentials.json 
 
