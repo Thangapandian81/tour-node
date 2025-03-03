@@ -254,7 +254,7 @@ router.post('/send-otp', async (req, res) => {
 });
 
 const sendOtpSms = async (phoneNumber, otp) => {
-    const apiKey = 'YipN5aERUbDxQlgjst3LO6IyXrB7vAo9h0HnMJ4CcSKfGuz8PqRT7Gyf4cY8wOiUMndW9jul6x5pkFB1';
+    const apiKey = '';
     const message = `Your OTP for cab booking is ${otp}`;
 
     try {
